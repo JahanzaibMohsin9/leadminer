@@ -5,6 +5,7 @@ use parking_lot::Mutex;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 /// Configuration for audit logger
@@ -31,6 +32,7 @@ pub struct AuditLogger {
     current_file: Arc<Mutex<Option<BufWriter<File>>>>,
     current_file_path: Arc<Mutex<Option<PathBuf>>>,
     current_file_size: Arc<Mutex<u64>>,
+    rotation_seq: AtomicU64,
 }
 
 impl AuditLogger {
@@ -45,6 +47,7 @@ impl AuditLogger {
             current_file: Arc::new(Mutex::new(None)),
             current_file_path: Arc::new(Mutex::new(None)),
             current_file_size: Arc::new(Mutex::new(0)),
+            rotation_seq: AtomicU64::new(0),
         };
 
         // Initialize first log file
@@ -97,9 +100,12 @@ impl AuditLogger {
             *file_guard = None;
         }
 
-        // Generate new filename with timestamp
+        // Generate a new filename. The sequence number keeps names unique when
+        // several rotations happen within the same second; without it the
+        // logger would reopen the same file and keep appending past max_file_size.
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
-        let filename = format!("audit_{}.jsonl", timestamp);
+        let seq = self.rotation_seq.fetch_add(1, Ordering::Relaxed);
+        let filename = format!("audit_{}_{:04}.jsonl", timestamp, seq);
         let filepath = self.config.log_dir.join(&filename);
 
         // Open new file
@@ -244,8 +250,10 @@ mod tests {
     use super::*;
     use std::env;
 
-    fn create_test_config() -> AuditConfig {
-        let temp_dir = env::temp_dir().join("leadminer_test_logs");
+    // Each test gets its own directory so parallel tests can't delete each other's files.
+    fn create_test_config(name: &str) -> AuditConfig {
+        let temp_dir = env::temp_dir().join(format!("leadminer_test_logs_{}", name));
+        let _ = fs::remove_dir_all(&temp_dir);
         AuditConfig {
             log_dir: temp_dir,
             max_file_size: 1024, // 1KB for testing
@@ -255,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_audit_logger_creation() {
-        let config = create_test_config();
+        let config = create_test_config("test_audit_logger_creation");
         let logger = AuditLogger::new(config.clone());
         assert!(logger.is_ok());
 
@@ -265,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_log_event() {
-        let config = create_test_config();
+        let config = create_test_config("test_log_event");
         let logger = AuditLogger::new(config.clone()).unwrap();
 
         let event = AuditEvent::new(
@@ -283,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_log_rotation() {
-        let config = create_test_config();
+        let config = create_test_config("test_log_rotation");
         let logger = AuditLogger::new(config.clone()).unwrap();
 
         // Log enough events to trigger rotation

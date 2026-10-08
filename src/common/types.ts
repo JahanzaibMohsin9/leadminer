@@ -34,5 +34,5 @@ export interface IpcApi {
   getLicenseStatus: () => Promise<boolean>;
   getHardwareId: () => Promise<string>;
   onScrapeUpdate: (callback: (data: BusinessData[]) => void) => () => void;
-  onStatusChange: (callback: (status: ScrapeStatus) => void) => () => void;
+  onStatusChange: (callback: (status: ScrapeStatus, message?: string) => void) => () => void;
 }

@@ -9,6 +9,7 @@ import { cleanText } from '../common/utils';
 const App: React.FC = () => {
   const [data, setData] = useState<BusinessData[]>([]);
   const [status, setStatus] = useState<ScrapeStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isLicensed, setIsLicensed] = useState(false);
   const [showLicenseDialog, setShowLicenseDialog] = useState(false);
 
@@ -28,8 +29,9 @@ const App: React.FC = () => {
       setData((prev) => [...prev, ...newData]);
     });
 
-    const cleanupStatusChange = window.electron.onStatusChange((newStatus) => {
+    const cleanupStatusChange = window.electron.onStatusChange((newStatus, message) => {
       setStatus(newStatus);
+      setErrorMessage(newStatus === 'error' ? message : undefined);
     });
 
     // Return cleanup function to remove listeners on unmount
@@ -172,6 +174,7 @@ const App: React.FC = () => {
           onExport={handleExport}
           onExportExcel={handleExportExcel}
           count={data.length}
+          errorMessage={errorMessage}
         />
 
         <ResultsTable data={data} />

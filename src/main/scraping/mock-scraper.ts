@@ -27,7 +27,7 @@ export class MockScraper {
 
   constructor(
     private onData: (data: BusinessData[]) => void,
-    private onStatus: (status: ScrapeStatus) => void
+    private onStatus: (status: ScrapeStatus, message?: string) => void
   ) { }
 
   scrape(config: ScrapeConfig) {
@@ -36,8 +36,9 @@ export class MockScraper {
 
     if (process.env.FORCE_ERROR === 'true') {
       setTimeout(() => {
-        this.onStatus('error');
+        // stop() reports 'idle', so report the error after it or the error is never shown.
         this.stop();
+        this.onStatus('error', 'Simulated scraping failure (FORCE_ERROR)');
       }, 1000);
       return;
     }

@@ -14,8 +14,8 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('scrape-update', handler);
     return () => ipcRenderer.removeListener('scrape-update', handler);
   },
-  onStatusChange: (callback: (status: ScrapeStatus) => void) => {
-    const handler = (_event: any, status: ScrapeStatus) => callback(status);
+  onStatusChange: (callback: (status: ScrapeStatus, message?: string) => void) => {
+    const handler = (_event: any, status: ScrapeStatus, message?: string) => callback(status, message);
     ipcRenderer.on('status-change', handler);
     return () => ipcRenderer.removeListener('status-change', handler);
   },

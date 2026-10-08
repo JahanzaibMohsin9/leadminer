@@ -15,9 +15,10 @@ interface ControlPanelProps {
   onExport: () => void;
   onExportExcel: () => void;
   count: number;
+  errorMessage?: string;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onStop, onPause, onResume, onExport, onExportExcel, count }) => {
+export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onStop, onPause, onResume, onExport, onExportExcel, count, errorMessage }) => {
   const [keyword, setKeyword] = useState('');
   const [city, setCity] = useState('');
   const [speed, setSpeed] = useState<ScrapeConfig['speed']>('normal');
@@ -297,7 +298,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onS
         <ProgressBar status={status} />
 
         {/* Warning System */}
-        <WarningSystem status={status} />
+        <WarningSystem status={status} errorMessage={errorMessage} />
 
         {/* Help */}
         <HelpContent />

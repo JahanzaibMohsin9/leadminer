@@ -193,11 +193,11 @@ app.whenReady().then(async () => {
                 event.sender.send('scrape-update', cleanData);
               }
             },
-            (status) => {
+            (status, message) => {
               if (currentSessionId) {
                 dbManager.updateSessionStatus(currentSessionId, status);
               }
-              event.sender.send('status-change', status);
+              event.sender.send('status-change', status, message);
             }
           );
         }
@@ -222,11 +222,11 @@ app.whenReady().then(async () => {
               event.sender.send('scrape-update', cleanData);
             }
           },
-          (status) => {
+          (status, message) => {
             if (currentSessionId) {
               dbManager.updateSessionStatus(currentSessionId, status);
             }
-            event.sender.send('status-change', status);
+            event.sender.send('status-change', status, message);
           }
         );
       }

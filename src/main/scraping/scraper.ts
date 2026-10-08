@@ -36,7 +36,7 @@ export class Scraper {
     private page: Page,
     private navigator: Navigator,
     private onUpdate: (data: BusinessData[]) => void,
-    private onStatus: (status: ScrapeStatus) => void
+    private onStatus: (status: ScrapeStatus, message?: string) => void
   ) { }
 
   async stop() {
@@ -80,7 +80,7 @@ export class Scraper {
       if (captchaDetected) {
         log.warn('CAPTCHA detected, aborting scrape');
         const errorMsg = 'CAPTCHA detected. Please slow down your scraping speed or try again later. Consider using a proxy or waiting a few hours.';
-        this.onStatus({ status: 'error', message: errorMsg } as any);
+        this.onStatus('error', errorMsg);
         return;
       }
 
@@ -127,7 +127,7 @@ export class Scraper {
     } catch (error: any) {
       log.error('Scrape error:', error);
       const errorMsg = error.message || 'An unexpected error occurred during scraping';
-      this.onStatus({ status: 'error', message: errorMsg } as any);
+      this.onStatus('error', errorMsg);
     } finally {
       this.isRunning = false;
     }

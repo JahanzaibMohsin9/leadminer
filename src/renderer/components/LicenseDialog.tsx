@@ -94,7 +94,7 @@ export const LicenseDialog: React.FC<LicenseDialogProps> = ({ onActivate, onClos
                             value={licenseKey}
                             onChange={(e) => setLicenseKey(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleActivate()}
-                            placeholder="LM-XXXX-XXXX-XXXX-XXXX"
+                            placeholder="Paste your license key (starts with LM-)"
                             disabled={isActivating}
                             aria-label="License key"
                             style={{ fontFamily: 'monospace', letterSpacing: '1px' }}
@@ -125,14 +125,14 @@ export const LicenseDialog: React.FC<LicenseDialogProps> = ({ onActivate, onClos
                             fontSize: 'var(--font-size-xs)',
                             color: 'var(--text-muted)'
                         }}>
-                            <strong style={{ color: 'var(--text-secondary)' }}>Format:</strong> LM-XXXX-XXXX-XXXX-XXXX
+                            <strong style={{ color: 'var(--text-secondary)' }}>Format:</strong> a signed key starting with LM-
                         </p>
                         <p style={{
                             margin: 'var(--space-xs) 0 0 0',
                             fontSize: 'var(--font-size-xs)',
                             color: 'var(--text-muted)'
                         }}>
-                            Don't have a license key? Visit <span style={{ color: 'var(--accent-blue)' }}>leadminer.com</span>
+                            Licenses are issued per device. Share the Device ID below to get one.
                         </p>
                     </div>
 

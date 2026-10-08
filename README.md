@@ -8,6 +8,20 @@ Everything runs on the user's machine. There are no accounts, servers or cloud d
 
 > Use responsibly: only collect publicly available information and respect the terms of the sites you automate and the anti-spam laws where you do outreach.
 
+## Screenshots
+
+**Results:** businesses found for "Dentists in Austin", with phone, email, website and address.
+
+![Lead results](docs/screenshots/results.png)
+
+| Mining in progress | City search |
+|---|---|
+| ![Mining in progress](docs/screenshots/running.png) | ![City search](docs/screenshots/city-search.png) |
+| **Filtering results** | **License activation** |
+| ![Filtering results](docs/screenshots/filter.png) | ![License activation](docs/screenshots/activation.png) |
+
+Screenshots were taken in test mode with fictional sample data (`TEST_MODE=true MOCK_DATA=demo`). No real site was scraped.
+
 ## Features
 
 - Keyword + city search with a live results table
@@ -65,14 +79,18 @@ node tools/generate-license.js --hardware-id <your-hardware-id> --lifetime
 
 `private_key.pem` is git-ignored. Never commit it.
 
-To exercise the UI without touching a real site, start the app with `TEST_MODE=true` to use the built-in mock scraper.
+To exercise the UI without touching a real site, start the app with `TEST_MODE=true` to use the built-in mock scraper. Add `MOCK_DATA=demo` for a realistic set of fictional businesses.
 
 ## Testing
 
 ```bash
-npm test                 # Jest unit + integration tests
+npm test                 # Jest unit tests
+npm run build            # the Playwright specs run against the built app
 npm run test:e2e         # Playwright end-to-end and performance specs
+cd native && cargo test  # Rust native module tests
 ```
+
+The end-to-end specs launch the app with a throwaway profile and issue themselves a license, so they need the local key pair described above. Without `native/keys/private_key.pem` they are skipped.
 
 ## Packaging
 

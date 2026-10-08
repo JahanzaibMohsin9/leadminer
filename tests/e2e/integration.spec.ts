@@ -1,83 +1,67 @@
-import { _electron as electron, test, expect } from '@playwright/test';
-import path from 'path';
+import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { activate, canLicense, launchApp, startMining, statusBadge } from './helpers';
 
-test.describe('Scraping Workflow', () => {
-  test('should scrape and display data', async () => {
-    const electronApp = await electron.launch({
-      args: [path.join(__dirname, '../../out/main/main/main.js'), '--no-sandbox', '--disable-gpu'],
-      env: {
-        ...process.env,
-        NODE_ENV: 'production',
-        TEST_MODE: 'true',
-      }
-    });
+test.describe('Scraping workflow', () => {
+  test.skip(!canLicense, 'Needs native/keys/private_key.pem to issue a test license (see README).');
 
-    const window = await electronApp.firstWindow();
-    await window.waitForLoadState('domcontentloaded');
+  test('scrapes, shows results and exports CSV', async () => {
+    const { app, window } = await launchApp();
+    await activate(window);
+    await startMining(window);
 
-    // Input data
-    await window.fill('input[placeholder*="Keyword"]', 'test keyword');
-    await window.fill('input[placeholder*="City"]', 'test city');
+    await expect(window.getByText('Mock Business 1')).toBeVisible({ timeout: 10000 });
+    await expect(window.getByText('Mock Business 5')).toBeVisible({ timeout: 10000 });
+    await expect(statusBadge(window)).toHaveText('Completed', { timeout: 10000 });
+    await expect(window.locator('.data-table-count')).toHaveText('5');
 
-    // Start scraping
-    await window.click('text=Start Scraping');
-
-    // Verify status changes to RUNNING
-    await expect(window.locator('text=Status: RUNNING')).toBeVisible();
-
-    // Verify data appears in table (MockScraper emits data)
-    await expect(window.locator('text=Mock Business 1')).toBeVisible({ timeout: 10000 });
-    await expect(window.locator('text=Mock Business 5')).toBeVisible({ timeout: 10000 });
-
-    // Verify status changes to COMPLETED (MockScraper stops after 5)
-    await expect(window.locator('text=Status: COMPLETED')).toBeVisible({ timeout: 10000 });
-
-    // Verify lead count
-    await expect(window.locator('text=Leads Found: 5')).toBeVisible();
-
-    // Test Export
-    // Prepare for download
-    const downloadPromise = window.waitForEvent('download');
-    await window.click('text=Export CSV');
-    const download = await downloadPromise;
-
-    // Save to temporary path
-    const downloadPath = await download.path();
-    expect(downloadPath).toBeTruthy();
-    
-    const content = fs.readFileSync(downloadPath!, 'utf-8');
+    // Electron turns the download into a native "Save as" dialog; pre-set the path instead.
+    const csvPath = path.join(os.tmpdir(), `leadminer-e2e-${Date.now()}.csv`);
+    await app.evaluate(({ session }, savePath) => {
+      session.defaultSession.once('will-download', (_event, item) => item.setSavePath(savePath));
+    }, csvPath);
+    await window.getByRole('button', { name: /CSV/ }).click();
+    await expect.poll(() => fs.existsSync(csvPath) && fs.statSync(csvPath).size > 0, { timeout: 10000 }).toBe(true);
+    const content = fs.readFileSync(csvPath, 'utf-8');
     expect(content).toContain('Name,Phone,Email,Website,Address');
     expect(content).toContain('"Mock Business 1"');
 
-    await electronApp.close();
+    await app.close();
   });
 
-  test('should handle scraping errors', async () => {
-    const electronApp = await electron.launch({
-      args: [path.join(__dirname, '../../out/main/main/main.js'), '--no-sandbox', '--disable-gpu'],
-      env: {
-        ...process.env,
-        NODE_ENV: 'production',
-        TEST_MODE: 'true',
-        FORCE_ERROR: 'true'
-      }
-    });
+  test('shows an error status when scraping fails', async () => {
+    const { app, window } = await launchApp({ FORCE_ERROR: 'true' });
+    await activate(window);
+    await startMining(window, 'error test');
 
-    const window = await electronApp.firstWindow();
-    await window.waitForLoadState('domcontentloaded');
+    await expect(statusBadge(window)).toHaveText('Error', { timeout: 10000 });
+    await expect(window.getByText('Simulated scraping failure (FORCE_ERROR)')).toBeVisible();
 
-    // Input data
-    await window.fill('input[placeholder*="Keyword"]', 'error test');
-    await window.fill('input[placeholder*="City"]', 'test city');
+    await app.close();
+  });
 
-    // Start scraping
-    await window.click('text=Start Scraping');
+  test('pause and resume continue the run to completion', async () => {
+    const { app, window } = await launchApp({ MOCK_COUNT: '10', MOCK_DELAY: '300' });
+    await activate(window);
+    await startMining(window);
 
-    // Verify status changes to RUNNING then ERROR
-    await expect(window.locator('text=Status: RUNNING')).toBeVisible();
-    await expect(window.locator('text=Status: ERROR')).toBeVisible({ timeout: 10000 });
+    await expect(window.getByText('Mock Business 2')).toBeVisible({ timeout: 10000 });
+    await window.getByRole('button', { name: /Pause/ }).click();
+    await expect(statusBadge(window)).toHaveText('Paused');
+    await window.getByRole('button', { name: /Resume/ }).click();
 
-    await electronApp.close();
+    await expect(statusBadge(window)).toHaveText('Completed', { timeout: 15000 });
+    await expect(window.locator('.data-table-count')).toHaveText('10');
+
+    await app.close();
+  });
+
+  test('blocks scraping until a license is activated', async () => {
+    const { app, window } = await launchApp();
+    await expect(window.getByLabel('License key')).toBeVisible({ timeout: 10000 });
+    await expect(window.getByText('🔒 Unlicensed')).toBeVisible();
+    await app.close();
   });
 });

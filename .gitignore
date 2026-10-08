@@ -1,0 +1,17 @@
+node_modules/
+dist/
+out/
+build/*
+!build/icon.png
+!build/convert-icon.js
+.DS_Store
+Thumbs.db
+*.log
+.env
+
+# Native module artifacts
+*.node
+native/*.node
+
+# Private key - NEVER commit this
+native/keys/private_key.pem

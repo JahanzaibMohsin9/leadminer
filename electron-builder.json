@@ -1,0 +1,28 @@
+{
+  "appId": "com.leadminer.desktop",
+  "productName": "LeadMiner",
+  "icon": "build/icon.png",
+  "directories": {
+    "buildResources": "build",
+    "output": "dist"
+  },
+  "files": [
+    "out/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "native",
+      "to": "native",
+      "filter": [
+        "*.node"
+      ]
+    }
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "mac": {
+    "target": "dmg"
+  }
+}

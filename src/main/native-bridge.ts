@@ -18,9 +18,9 @@ try {
       throw new Error(`Unsupported platform: ${process.platform}. This application currently supports Windows only.`);
     }
   } else {
-    // In dev, __dirname is out/main. We need to go to root/native
+    // In dev, the app path is the project root (where package.json lives).
     if (process.platform === 'win32') {
-      nativePath = path.resolve(__dirname, '../../native/index.win32-x64-msvc.node');
+      nativePath = path.join(app.getAppPath(), 'native', 'index.win32-x64-msvc.node');
     } else {
       // Dev mode on non-Windows will use fallback mock
       throw new Error('Development mode: native module only available for Windows');
@@ -36,13 +36,13 @@ try {
   if (app.isPackaged) {
     const { dialog } = require('electron');
 
-    let errorMessage = 'Failed to load required components. Please reinstall the application.\\n\\n';
+    let errorMessage = 'Failed to load required components. Please reinstall the application.\n\n';
 
     if (error instanceof Error) {
       if (error.message.includes('Unsupported platform')) {
-        errorMessage = `This application is currently only available for Windows.\\n\\nYour platform: ${process.platform}\\n\\nPlease check for a compatible version or contact support.`;
+        errorMessage = `This application is currently only available for Windows.\n\nYour platform: ${process.platform}\n\nPlease check for a compatible version or contact support.`;
       } else {
-        errorMessage += `Error: Native module not found.\\nDetails: ${error.message}`;
+        errorMessage += `Error: Native module not found.\nDetails: ${error.message}`;
       }
     }
 

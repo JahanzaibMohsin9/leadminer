@@ -213,7 +213,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Scroll instead of squeezing the results table when the control panel is tall. */
+  overflow-y: auto;
   padding: var(--space-lg);
   gap: var(--space-lg);
 }
@@ -489,7 +490,8 @@ body {
    DATA TABLE
    ============================================ */
 .data-table-container {
-  flex: 1;
+  /* Fill the remaining space, but never shrink below a usable number of rows. */
+  flex: 1 0 360px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
